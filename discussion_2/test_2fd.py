@@ -128,30 +128,30 @@ Y_sorted = data_to_plot_sorted['Happiness Measurement'].values
 # Convert X_sorted to a numpy array of type float to ensure compatibility with np.floor
 X_sorted_numeric = np.array(X_sorted).astype(float)
 
-# Plotting actual vs predicted values in sequence
+
+# Recompute predictions for sorted X values
+predicted_y_sorted = model.predict(X_sorted_numeric.reshape(-1, 1))
+
+# Plotting
 plt.figure(figsize=(10, 6))
 # Actual data points
-plt.scatter(X_sorted_numeric, Y_sorted, color='blue', marker='X', s=75, label='Actual Values')
-# Predicted Regression Line from Linear Regression Model
-plt.plot(X_sorted_numeric, model.predict(X_sorted_numeric.reshape(-1, 1)), color='red', label='Predicted Regression Line')
+plt.scatter(X_sorted_numeric, Y_sorted, color='blue', marker='X', s=75, label=f'Actual Values')
+# Predicted Regression Line
+plt.plot(X_sorted_numeric, predicted_y_sorted, color='red', label=f'Predicted Regression Line')
+
+# Plot residuals
+for actual, predicted, x in zip(Y_sorted, predicted_y_sorted, X_sorted_numeric):
+    plt.vlines(x, actual, predicted, color='black', linestyle='dotted', linewidth=0.5)
+
 plt.xlabel('Income (GDP)')
 plt.ylabel('Happiness Measurement')
-plt.title('Actual vs Predicted Values')
-
-# Set x-axis tick marks to only whole values or those divisible by 0.5
+plt.title('Actual vs Predicted Values with Residuals')
 tick_values = np.arange(start=np.floor(min(X_sorted_numeric)), 
                         stop=np.ceil(max(X_sorted_numeric))+0.5, 
                         step=0.5)
 plt.xticks(tick_values, [f'{x:.1f}' if x % 1 else f'{int(x)}' for x in tick_values])
-
-# Set y-axis limits if necessary
 plt.xlim(right=5.5)
 plt.ylim(bottom=3, top=9)
 plt.legend()
-
-# Adjust layout to prevent clipping of tick-labels
 plt.tight_layout()
 plt.show()
-
-# THIS SRC PLOTS THE DATA POINTS AND SHOWS THE REGRESSION LINE.
-# THE CALCULATE REGRESSION METRIC IS SHOWN ON THE LEGEND.

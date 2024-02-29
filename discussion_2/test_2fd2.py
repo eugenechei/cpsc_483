@@ -71,6 +71,9 @@ merged_train_data = pd.merge(hls_train, weo_selected_measurement_2018, on="Count
 # renames columns for clarity and recreates final dataframe with specific columns
 merged_train_data = merged_train_data.rename(columns={"Value": "Happiness Measurement", "2019": "Income Measurement"})
 merged_train_data = pd.DataFrame(merged_train_data, columns=['Country','Happiness Measurement', 'Income Measurement'])
+# Sorting the merged_train_data dataframe based on 'Income Measurement'
+merged_train_data = merged_train_data.sort_values(by="Income Measurement")
+
 print(weo_selected_measurement_2018)
 print(merged_train_data)
 
@@ -80,22 +83,21 @@ import sklearn.linear_model
 # Calculates and print regression metrics
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.metrics import median_absolute_error
+from matplotlib.ticker import MultipleLocator
 
 X = np.c_[merged_train_data["Income Measurement"]]
 Y = np.c_[merged_train_data["Happiness Measurement"]]
 x = X.tolist()
 y = Y.tolist()
 
-import matplotlib.pyplot as plt
-import sklearn.linear_model
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-
 # Assuming 'X' and 'Y' are already defined and reshaped as needed
 # Fit the linear model
 model = sklearn.linear_model.LinearRegression()
 model.fit(X, Y)
 
-# Make predictions
+# Recompute predictions after sorting
+X = np.c_[merged_train_data["Income Measurement"]]
+Y = np.c_[merged_train_data["Happiness Measurement"]]
 predicted_y = model.predict(X)
 
 # Calculate metrics
@@ -107,18 +109,50 @@ r2 = r2_score(Y, predicted_y)
 X_flat = X.flatten()
 Y_flat = Y.flatten()
 
+
+
+
+# Combine X and Y into a single DataFrame for sorting
+data_to_plot = pd.DataFrame({
+    'Income Measurement': X_flat,
+    'Happiness Measurement': Y_flat
+})
+# Sort the DataFrame based on 'Income Measurement'
+data_to_plot_sorted = data_to_plot.sort_values(by='Income Measurement')
+# Extract the sorted values for plotting
+X_sorted = data_to_plot_sorted['Income Measurement'].values
+Y_sorted = data_to_plot_sorted['Happiness Measurement'].values
+
+# Convert X_sorted to a numpy array of type float to ensure compatibility with np.floor
+X_sorted_numeric = np.array(X_sorted).astype(float)
+
+
+
+
+
 # Plotting actual vs predicted values
 plt.figure(figsize=(10, 6))
 plt.scatter(X_flat, Y_flat, color='blue', marker='X', s=75, label='Actual Values')
-plt.plot(X_flat, predicted_y, color='red', label='Predicted Regression Line')
+# plt.plot(X_flat, predicted_y, color='red', label='Predicted Regression Line')
+plt.plot(X_sorted_numeric, model.predict(X_sorted_numeric.reshape(-1, 1)), color='red', label='Predicted Regression Line')
+
+
 
 # Plot residuals
 for actual, predicted, x in zip(Y_flat, predicted_y, X_flat):
-    plt.vlines(x, actual, predicted, color='black', linestyle='dotted', linewidth=0.5)
+    plt.vlines(x, actual, predicted, color='black', linestyle='dotted', linewidth=1)
+
+
+# Set x-axis tick marks to only whole values or those divisible by 0.5
+tick_values = np.arange(start=np.floor(min(X_sorted_numeric)), 
+                        stop=np.ceil(max(X_sorted_numeric))+0.5, 
+                        step=0.5)
+plt.xticks(tick_values, [f'{x:.1f}' if x % 1 else f'{int(x)}' for x in tick_values])
 
 plt.xlabel('Income (GDP)')
 plt.ylabel('Happiness Measurement')
 plt.title('Actual vs Predicted Values with Residuals')
+plt.ylim(bottom=3, top=10)
 plt.legend()
 plt.show()
 
@@ -126,5 +160,3 @@ plt.show()
 print(f"Mean Squared Error (MSE): {mse}")
 print(f"Mean Absolute Error (MAE): {mae}")
 print(f"R-squared: {r2}")
-
-# Scatter plot with regression line and ***residual lines***
