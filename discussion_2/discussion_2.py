@@ -1,6 +1,7 @@
-import numpy as np
-import pandas as pd
-import ipywidgets as widgets
+# import statements
+import numpy as np # numpy - numerical operations
+import pandas as pd # pandas - data manipulation
+import ipywidgets as widgets # ipywidgets - interactive widgets in Jupyter
 
 hls_all_raw = pd.read_csv("/Users/macbook/Desktop/483/hls_r.csv")
 print(hls_all_raw)
