@@ -3,14 +3,20 @@ import numpy as np # numpy - numerical operations
 import pandas as pd # pandas - data manipulation
 import ipywidgets as widgets # ipywidgets - interactive widgets in Jupyter
 
+# read and print entire 'hls' dataset
 hls_all_raw = pd.read_csv("/Users/macbook/Desktop/483/hls_r.csv")
 print(hls_all_raw)
 
+# print specific columns of the dataset
 print(hls_all_raw["Indicator"])
 print("\n===========================================================\n")
+
+# creates new dataframe 'hls_slice' and prints specific columns
 hls_slice = pd.DataFrame(hls_all_raw, columns =["Country","Indicator","Type of indicator","Time","Value"])
 print(hls_slice)
 
+# filters rows from specified column
+# hls_ls = hls_slice.loc[hls_all_raw["<column_name>"] == "<row_name>"]
 hls_ls = hls_slice.loc[hls_all_raw["Indicator"] == "Life satisfaction"]
 print(hls_ls)
 print("\n===========================================================\n")
