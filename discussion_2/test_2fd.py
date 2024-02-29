@@ -1,3 +1,7 @@
+# THINGS TO DO:
+# Determine which regression metric to use - ChatGPT
+# Clean and simplify the source code
+
 import numpy as np # numerical operations
 import pandas as pd # data manipulation
 from IPython.display import display # 'display' function (standalone Py script)
@@ -128,7 +132,6 @@ Y_sorted = data_to_plot_sorted['Happiness Measurement'].values
 # Convert X_sorted to a numpy array of type float to ensure compatibility with np.floor
 X_sorted_numeric = np.array(X_sorted).astype(float)
 
-
 # Recompute predictions for sorted X values
 predicted_y_sorted = model.predict(X_sorted_numeric.reshape(-1, 1))
 
@@ -137,7 +140,7 @@ plt.figure(figsize=(10, 6))
 # Actual data points
 plt.scatter(X_sorted_numeric, Y_sorted, color='blue', marker='X', s=75, label=f'Actual Values')
 # Predicted Regression Line
-plt.plot(X_sorted_numeric, predicted_y_sorted, color='red', label=f'Predicted Regression Line')
+plt.plot(X_sorted_numeric, predicted_y_sorted, color='red', label=f'Predicted Line (R² = {r2:.2f})')
 
 # Plot residuals
 for actual, predicted, x in zip(Y_sorted, predicted_y_sorted, X_sorted_numeric):
