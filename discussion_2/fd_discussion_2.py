@@ -1,13 +1,9 @@
-# THINGS TO DO:
-# Determine which regression metric to use - ChatGPT
-# Clean and simplify the source code
-
 import numpy as np # numerical operations
 import pandas as pd # data manipulation
 from IPython.display import display # 'display' function (standalone Py script)
 
 # read and print entire 'hls' dataset
-hls_all_raw = pd.read_csv("/Users/macbook/Desktop/cpsc_483/hls_r.csv")
+hls_all_raw = pd.read_csv("/Users/macbook/Desktop/cpsc_483/discussion_2/hls_r.csv")
 print(hls_all_raw)
 
 # print specific columns of the dataset
@@ -20,7 +16,13 @@ print(hls_slice)
 
 # filters rows from specified column
 # hls_ls = hls_slice.loc[hls_all_raw["<column_name>"] == "<row_name>"]
-hls_ls = hls_slice.loc[hls_all_raw["Indicator"] == "Life satisfaction"]
+
+# HLS Indicator 1 & 2: Average score (0-10) 111 222
+#hls_ls = hls_slice.loc[hls_all_raw["Indicator"] == "Life satisfaction"]
+#hls_ls = hls_slice.loc[hls_all_raw["Indicator"] == "Satisfaction with personal relationships"]
+# HLS Indicator 3: Percentage (remaining gross income) 333
+hls_ls = hls_slice.loc[hls_all_raw["Indicator"] == "Housing affordability"]
+
 print(hls_ls)
 
 # basic analysis - counting records
@@ -57,24 +59,34 @@ print(hls_train)
 
 # Reading WEO dataset with error handling - 'UnicodeDecodeError'
 try:
-    weo_raw = pd.read_csv("/Users/macbook/Desktop/cpsc_483/weo23_r.csv", encoding='utf-8')
+    weo_raw = pd.read_csv("/Users/macbook/Desktop/cpsc_483/discussion_2/weo23_r.csv", encoding='utf-8')
 except UnicodeDecodeError:
     try:
-        weo_raw = pd.read_csv("/Users/macbook/Desktop/cpsc_483/weo23_r.csv", encoding='ISO-8859-1')
+        weo_raw = pd.read_csv("/Users/macbook/Desktop/cpsc_483/discussion_2/weo23_r.csv", encoding='ISO-8859-1')
     except UnicodeDecodeError:
-        weo_raw = pd.read_csv("/Users/macbook/Desktop/cpsc_483/weo23_r.csv", encoding='cp1252')
+        weo_raw = pd.read_csv("/Users/macbook/Desktop/cpsc_483/discussion_2/weo23_r.csv", encoding='cp1252')
 print(weo_raw)
 
 # weo_selected_measurement = weo_raw.loc[weo_raw['WEO Subject Code'].str.contains("NGDP_RPCH")]
 # filters rows from specified column. 'na=False' ensures rows with NaN are not included
-weo_selected_measurement = weo_raw.loc[weo_raw['WEO Subject Code'].str.contains("NGDP_RPCH", na=False)]
+
+# WEO SUBJ CODE
+# 'LE' Measurement      : No. of employed in millions
+# 'NGDPDPC' Measurement : $USD per/individual
+# 'PPPGDP' Measurement  : International $USD in billions       111 222 333
+#weo_selected_measurement = weo_raw.loc[weo_raw['WEO Subject Code'].str.contains("LE", na=False)]
+#weo_selected_measurement = weo_raw.loc[weo_raw['WEO Subject Code'].str.contains("NGDPDPC", na=False)]
+weo_selected_measurement = weo_raw.loc[weo_raw['WEO Subject Code'].str.contains("PPPGDP", na=False)]
+
+
+
 # creates new dataframe 'hls_slice' and prints specific columns
-weo_selected_measurement_2018 = pd.DataFrame(weo_selected_measurement, columns=['Country', '2019'])
+weo_selected_measurement_2018 = pd.DataFrame(weo_selected_measurement, columns=['Country', '2018'])
 # merges prepped WEO dataset with HLS dataset
 merged_train_data = pd.merge(hls_train, weo_selected_measurement_2018, on="Country")
 # renames columns for clarity and recreates final dataframe with specific columns
-merged_train_data = merged_train_data.rename(columns={"Value": "Happiness Measurement", "2019": "Income Measurement"})
-merged_train_data = pd.DataFrame(merged_train_data, columns=['Country','Happiness Measurement', 'Income Measurement'])
+merged_train_data = merged_train_data.rename(columns={"Value": "Subjective Well-Being", "2018": "World Economic Outlook"})
+merged_train_data = pd.DataFrame(merged_train_data, columns=['Country','Subjective Well-Being', 'World Economic Outlook'])
 print(weo_selected_measurement_2018)
 print(merged_train_data)
 
@@ -85,8 +97,17 @@ import sklearn.linear_model
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.metrics import median_absolute_error
 
-X = np.c_[merged_train_data["Income Measurement"]]
-Y = np.c_[merged_train_data["Happiness Measurement"]]
+
+# 222 333 - Convert 'World Economic Outlook' from string to float, removing commas
+merged_train_data['World Economic Outlook'] = merged_train_data['World Economic Outlook'].str.replace(',', '').astype(float)
+
+
+# Assuming 'merged_train_data' is the DataFrame containing your data
+# Drop rows with NaN values in either 'World Economic Outlook' or 'Subjective Well-Being'
+merged_train_data = merged_train_data.dropna(subset=['World Economic Outlook', 'Subjective Well-Being'])
+
+X = np.c_[merged_train_data["World Economic Outlook"]]
+Y = np.c_[merged_train_data["Subjective Well-Being"]]
 x = X.tolist()
 y = Y.tolist()
 
@@ -120,14 +141,14 @@ X_flat = X.flatten()
 Y_flat = Y.flatten()
 # Combine X and Y into a single DataFrame for sorting
 data_to_plot = pd.DataFrame({
-    'Income Measurement': X_flat,
-    'Happiness Measurement': Y_flat
+    'World Economic Outlook': X_flat,
+    'Subjective Well-Being': Y_flat
 })
-# Sort the DataFrame based on 'Income Measurement'
-data_to_plot_sorted = data_to_plot.sort_values(by='Income Measurement')
+# Sort the DataFrame based on 'World Economic Outlook'
+data_to_plot_sorted = data_to_plot.sort_values(by='World Economic Outlook')
 # Extract the sorted values for plotting
-X_sorted = data_to_plot_sorted['Income Measurement'].values
-Y_sorted = data_to_plot_sorted['Happiness Measurement'].values
+X_sorted = data_to_plot_sorted['World Economic Outlook'].values
+Y_sorted = data_to_plot_sorted['Subjective Well-Being'].values
 
 # Convert X_sorted to a numpy array of type float to ensure compatibility with np.floor
 X_sorted_numeric = np.array(X_sorted).astype(float)
@@ -136,25 +157,50 @@ X_sorted_numeric = np.array(X_sorted).astype(float)
 predicted_y_sorted = model.predict(X_sorted_numeric.reshape(-1, 1))
 
 # Plotting
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(12, 7))
 # Actual data points
-plt.scatter(X_sorted_numeric, Y_sorted, color='blue', marker='X', s=75, label=f'Actual Values')
-# Predicted Regression Line
-plt.plot(X_sorted_numeric, predicted_y_sorted, color='red', label=f'Predicted Line (R² = {r2:.2f})')
+plt.scatter(X_sorted_numeric, Y_sorted, color='green', s=200, alpha=0.5, label=f'Actual Values')
+# Predicted Regression Line: R-squared ²²²
+plt.plot(X_sorted_numeric, predicted_y_sorted, color='red', linewidth=1.75, label=f'Predicted Regression Line (RMSE = {rmse:.2f})')
 
 # Plot residuals
 for actual, predicted, x in zip(Y_sorted, predicted_y_sorted, X_sorted_numeric):
-    plt.vlines(x, actual, predicted, color='black', linestyle='dotted', linewidth=0.5)
+    plt.vlines(x, actual, predicted, color='navy', linestyle='solid', linewidth=1.75)
 
-plt.xlabel('Income (GDP)')
-plt.ylabel('Happiness Measurement')
-plt.title('Actual vs Predicted Values with Residuals')
-tick_values = np.arange(start=np.floor(min(X_sorted_numeric)), 
-                        stop=np.ceil(max(X_sorted_numeric))+0.5, 
-                        step=0.5)
+plt.title('Actual Data Values vs. Predicted Regression Line with Residuals')
+
+# TRAINED MODEL Labels  111
+#plt.xlabel('Employment in millions')
+#plt.ylabel('Life Satisfaction')
+
+# TRAINED MODEL Labels  222
+#plt.xlabel('GDP per capita in USD$')
+#plt.ylabel('Satisfaction w/ Personal Relationships')
+
+# TRAINED MODEL Labels  333
+plt.xlabel('Purchasing Power Parity GDP in Billions of Int USD$')
+plt.ylabel('Housing Affordability in %')
+
+# 111
+#tick_values = np.arange(start=np.floor(min(X_sorted_numeric)), stop=np.ceil(max(X_sorted_numeric))+0.5, step=5)
+# 222
+#tick_values = np.arange(start=np.floor(min(X_sorted_numeric)), stop=np.ceil(max(X_sorted_numeric))+0.5, step=10000)
+# 333
+tick_values = np.arange(start=np.floor(min(X_sorted_numeric)), stop=np.ceil(max(X_sorted_numeric))+0.5, step=3000)
+
 plt.xticks(tick_values, [f'{x:.1f}' if x % 1 else f'{int(x)}' for x in tick_values])
-plt.xlim(right=5.5)
-plt.ylim(bottom=3, top=9)
+
+# 111
+#plt.xlim(left=0, right=43)
+#plt.ylim(bottom=2, top=10)
+# 222
+#plt.xlim(left=10000, right=125000)
+#plt.ylim(bottom=2, top=10)
+# 333
+plt.xlim(left=-1000, right=21000)
+plt.ylim(bottom=50, top=90)
+
+
 plt.legend()
 plt.tight_layout()
 plt.show()
